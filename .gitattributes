@@ -1,0 +1,10 @@
+*.cs text eol=lf
+*.csproj text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf
+*.Config text eol=lf
+*.dll binary
+*.zip binary
+# Preserve source bytes and line endings.
+DepthOfMarketBeta/** -text
+NuGet.Config -text

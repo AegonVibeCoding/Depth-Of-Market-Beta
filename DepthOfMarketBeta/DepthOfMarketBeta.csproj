@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DepthOfMarketBeta</AssemblyName>
+    <Version>1.0.4</Version>
+    <AtasDir Condition="'$(AtasDir)' == ''">C:\Program Files (x86)\ATAS Platform</AtasDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="ATAS.Indicators.Technical"><HintPath>$(AtasDir)\ATAS.Indicators.Technical.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="ATAS.Indicators"><HintPath>$(AtasDir)\ATAS.Indicators.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="ATAS.DataFeedsCore"><HintPath>$(AtasDir)\ATAS.DataFeedsCore.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="OFT.Rendering"><HintPath>$(AtasDir)\OFT.Rendering.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="OFT.Attributes"><HintPath>$(AtasDir)\OFT.Attributes.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Utils.Common"><HintPath>$(AtasDir)\Utils.Common.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+  <Target Name="CheckAtas" BeforeTargets="ResolveReferences">
+    <Error Condition="!Exists('$(AtasDir)\ATAS.Indicators.dll')" Text="找不到 ATAS SDK。请使用 -p:AtasDir=你的ATAS安装目录。" />
+  </Target>
+</Project>
+
