@@ -1,43 +1,31 @@
-# Depth Of Market Beta 1.0
+# depth of market beta 1.1
 
-ATAS 自定义盘口指标，指标列表中的名称为 **depth of market beta**。
+指标名称：**depth of market beta**。DLL：**DepthOfMarketBeta.dll**。版本：**1.1**，程序集版本：**1.1.0.0**。
 
-提供原生盘口、Net/Stacked/Pulled/Both 四个独立挂撤单统计栏，以及可选的黄线密集区观察功能。
+Z1盘口状态分别显示缺少买卖盘、报价交叉、实际价差超限或数据未更新，并列出买一卖一、价差门槛和更新时间。真实盘口更新后，内部报价异常时会限频核对平台快照；仅使用完整且价差合格的快照重建基线，不把快照计成增挂。数据超时和实际宽价差仍暂停生成。
+
+黄线说明固定在图表右侧边栏左边，文字右对齐，默认间距12像素。横向拖动时间轴不会改变说明的右边界；纵向仍随黄线价格移动。黑底按文字收紧，超过最大宽度显示省略号；重叠或空间不足时省略，不改变对应价位。
 
 ## 下载
 
-- [完整指标包：ATAS、ATAS X 和使用说明](Indicators/Depth-Of-Market-1.0.zip)
-- [普通 ATAS DLL](Indicators/ATAS/DepthOfMarketBeta.dll)
-- [ATAS X DLL](Indicators/ATASX/DepthOfMarketBeta.dll)
-
-在 GitHub 文件页面点击下载原始文件，选择对应平台的 DLL。
+- [1.1 完整包](Indicators/Depth-Of-Market-1.1.zip)
+- [完整使用说明](docs/使用说明.md)
 
 ## 安装
 
-将 DLL 放入对应平台的自定义指标目录。普通 ATAS 通常为 `%APPDATA%\ATAS\Indicators`，ATAS X 使用其自身目录。
+普通ATAS使用 `ATAS/DepthOfMarketBeta.dll`，ATAS X使用 `ATASX/DepthOfMarketBeta.dll`。放入各自的自定义指标目录，重启平台，搜索并添加 **depth of market beta**。普通ATAS常见目录为 `%APPDATA%\ATAS\Indicators`。
 
-重启平台，在指标列表搜索 **depth of market beta** 并添加。使用实时 Level 2 盘口和成交数据；指标无需激活码。黄线功能默认关闭，需要在 Z1 手动开启。
+## 设置
 
-## 默认设置
+- Z1：开启密集区功能，默认关闭。
+- Z4 → 说明距盘口栏（像素）：距图表右侧边界的间距，默认12。
+- Z4 → 区域说明最大宽度：默认380，实际黑底按文字宽度收紧。
+- Z4 → 最多区域短说明：默认4，空间不足或重叠时省略。
 
-| 项目 | 默认值 |
-|---|---|
-| 原生 DOM 宽度 | 100像素 |
-| Net距离 | 150像素 |
-| Both距离 | 300像素 |
-| 仅堆叠、仅拉取 | 关闭 |
-| Net/Both增加色 | 青绿 #FF089981 |
-| Net/Both减少色 | 红色 #FFF2385A |
+默认DOM宽度100，Net距离150，Both距离300；仅堆叠和仅拉取默认关闭；Net/Both增加青绿、减少红色。旧模板保留已保存参数。
 
-距离是各栏右边缘距图表右侧的距离。模板会保留已保存的设置。
+完整安装、参数、逻辑和排查方法见 [使用说明](docs/使用说明.md)。
 
-## 文档与源码
+## 编译
 
-- [使用说明](docs/使用说明.md)：安装、参数、黄线逻辑和常见问题。
-- [代码说明](docs/代码说明.md)：源码结构、计算流程和编译方法。
-- [源码](DepthOfMarketBeta/)：C# 项目和编译脚本。
-- [指标文件](Indicators/)：两版 DLL、完整 ZIP 和文件校验值。
-
-需要 Windows、.NET 10 SDK 和本机对应平台 SDK 才能编译。仓库不附带平台 SDK。
-
-盘口减少包含撤单与成交消耗；黄线用于观察市场行为，不直接代表买卖入场信号。
+需要Windows、.NET 10 SDK和对应平台SDK，执行 `./DepthOfMarketBeta/Build.ps1`。构建不自动安装，不启动或控制ATAS界面。

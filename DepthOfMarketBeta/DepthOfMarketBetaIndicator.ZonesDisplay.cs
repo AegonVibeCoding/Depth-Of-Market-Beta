@@ -11,11 +11,11 @@ public sealed partial class DepthOfMarketBetaIndicator
     private string _zoneRenderStatus = "等待黄线绘制";
     private readonly RenderStringFormat _reasonFormat = new()
     {
-        Alignment = StringAlignment.Near, LineAlignment = StringAlignment.Center,
+        Alignment = StringAlignment.Far, LineAlignment = StringAlignment.Center,
         Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap
     };
 
-    private void DrawZoneBands(RenderContext context, EngineView view, DateTime now, Rectangle[] reservedLabels)
+    private void DrawZoneBands(RenderContext context, EngineView view, DateTime now)
     {
         if (!ShowZoneBands) { _zoneRenderStatus = "区域显示已关闭"; return; }
         if (ChartInfo is null || Container is null || InstrumentInfo is null) return;
@@ -56,18 +56,21 @@ public sealed partial class DepthOfMarketBetaIndicator
         }
 
         // Prioritise recently active regions; omit colliding explanations instead of piling up text.
-        var occupied = reservedLabels.Select(x => Rectangle.Inflate(x, 6, 6)).ToList();
+        var occupied = new List<Rectangle>();
+        var captionRight = ZoneChartLayout.CaptionRight(r, ZoneLabelRightGap);
         var shown = 0;
         foreach (var item in labels)
         {
             if (shown >= Math.Clamp(MaximumZoneLabels, 0, 8)) break;
-            var placement = ZoneChartLayout.Caption(r, item.Band, CompactZoneLabelWidth, occupied);
+            var text = ZoneDisplayLayout.Label(item.Zone, reference);
+            var measuredWidth = context.MeasureString(text, _zoneFont).Width + 12;
+            var placement = ZoneChartLayout.RightCaption(r, item.Band, captionRight, measuredWidth, CompactZoneLabelWidth, occupied);
             if (placement is null) continue;
             var box = placement.Value;
             occupied.Add(Rectangle.Inflate(box, 0, ReduceTextClutter ? 6 : 0));
             shown++;
             context.FillRectangle(Color.FromArgb(210, 24, 27, 32), box);
-            context.DrawString(ZoneDisplayLayout.Label(item.Zone, reference), _zoneFont, Color.Gold,
+            context.DrawString(text, _zoneFont, Color.Gold,
                 new Rectangle(box.Left + 6, box.Top, box.Width - 12, box.Height), _reasonFormat);
         }
         _zoneRenderStatus = $"合并{merged.Length}区/筛选{zones.Length}区/绘制{painted}区/短说明{shown}组/屏外{offscreen}区";

@@ -95,8 +95,12 @@ public sealed partial class DepthOfMarketBetaIndicator
     public int MaximumVisibleZones { get; set; } = 6;
     [Range(0, 8), Display(Name = "最多区域短说明", GroupName = "Z4. 区域显示", Order = 1318)]
     public int MaximumZoneLabels { get; set; } = 4;
-    [Range(180, 600), Display(Name = "区域短说明宽度", GroupName = "Z4. 区域显示", Order = 1319)]
+    [Range(180, 600), Display(Name = "区域说明最大宽度", GroupName = "Z4. 区域显示", Order = 1319,
+        Description = "说明固定在图表右侧边栏左边，文字右对齐。黑底按实际文字收紧，超过此宽度显示省略号。")]
     public int CompactZoneLabelWidth { get; set; } = 380;
+    [Range(0, 200), Display(Name = "说明距盘口栏（像素）", GroupName = "Z4. 区域显示", Order = 1320,
+        Description = "说明右边缘与图表右侧边界的距离，默认12像素，不受独立盘口列位置影响。拖动时间轴不会改变横向位置；上下仍随区域价格移动。")]
+    public int ZoneLabelRightGap { get; set; } = 12;
     [Browsable(false), Display(AutoGenerateField = false)]
     public bool ShowEventDots { get => false; set { } }
     [Display(Name = "合并相邻黄线", GroupName = "Z4. 区域显示", Order = 1311)]

@@ -23,6 +23,7 @@ public sealed class ZoneEngine
     private long _second = -1, _nextId;
     private int _bar;
     private decimal _bid, _ask;
+    private int _bookRepairs;
 
     private sealed class Level
     {
@@ -94,14 +95,47 @@ public sealed class ZoneEngine
 
     public bool NeedsReseed(DateTime now) => _second < 0 || (now - _lastDepth).TotalSeconds > _s.StaleSeconds;
 
+    public bool NeedsBookRepair(DateTime now) => _second >= 0 && now >= _now
+        && (now - _lastDepth).TotalSeconds <= _s.StaleSeconds
+        && (_bid <= 0 || _ask <= _bid || (_ask - _bid) / _tick > _s.MaximumSpreadTicks);
+
+    // Called only after a real depth update, never as a timer heartbeat. A repeated old snapshot
+    // must not make a stale feed healthy or manufacture stacking/withdrawal evidence.
+    public bool TryRepairBook(IEnumerable<DepthRow> snapshot, DateTime now, int bar)
+    {
+        if (!NeedsBookRepair(now)) return false;
+        var rows = snapshot.Where(r => r.Price > 0 && r.Volume > 0).ToArray();
+        var bid = rows.Where(r => r.Side == BookSide.Bid).Select(r => r.Price).DefaultIfEmpty(0).Max();
+        var ask = rows.Where(r => r.Side == BookSide.Ask).Select(r => r.Price).DefaultIfEmpty(0).Min();
+        if (bid <= 0 || ask <= bid || (ask - bid) / _tick > _s.MaximumSpreadTicks
+            || (bid == _bid && ask == _ask)) return false;
+        Seed(rows, now, bar);
+        _bookRepairs++;
+        return true;
+    }
+
+    private string HealthProblem(DateTime now)
+    {
+        var quotes = $"买一{_bid:0.#####}/卖一{_ask:0.#####}";
+        var age = Math.Max(0, (now - _lastDepth).TotalSeconds);
+        if (age > _s.StaleSeconds)
+            return $"盘口未更新，暂停生成｜上次更新{age:0.0}秒前/阈值{_s.StaleSeconds}秒｜{quotes}";
+        if (_bid <= 0 || _ask <= 0)
+            return $"缺少{(_bid <= 0 && _ask <= 0 ? "买卖" : _bid <= 0 ? "买" : "卖")}盘，暂停生成｜{quotes}｜盘口更新{age:0.0}秒前";
+        if (_ask <= _bid)
+            return $"买卖盘交叉或锁定，暂停生成｜{quotes}｜盘口更新{age:0.0}秒前";
+        return $"价差超限，暂停生成｜当前{(_ask - _bid) / _tick:0.##}tick/允许{_s.MaximumSpreadTicks}tick｜{quotes}｜盘口更新{age:0.0}秒前";
+    }
+
     public string Diagnostics(DateTime now)
     {
         if (_second < 0) return "等待盘口快照";
-        if (!Healthy(now)) return "盘口过期或价差异常，暂停生成";
+        if (!Healthy(now)) return HealthProblem(now);
         var cut = Second(now) - _s.WindowSeconds;
         var ready = _groups.Values.Count(g => g.History.Count(x => x.Observed && x.Second < cut) >= _s.WarmupSeconds);
         var events = _groups.Values.Select(g => g.History.Where(x => x.Observed && x.Second >= cut).Sum(x => x.Events)).DefaultIfEmpty().Max();
-        return $"累计形成{_nextId}区/活动{_zones.Count(IsLive)}区｜基线就绪{ready}/{_groups.Count}组｜最高窗口事件{events}/{_s.MinimumEvents}";
+        return $"累计形成{_nextId}区/活动{_zones.Count(IsLive)}区｜基线就绪{ready}/{_groups.Count}组｜最高窗口事件{events}/{_s.MinimumEvents}"
+            + (_bookRepairs > 0 ? $"｜盘口校正{_bookRepairs}次" : "");
     }
 
     public void Depth(DepthRow row, DateTime now, int bar)
@@ -453,7 +487,7 @@ public sealed class ZoneEngine
     public EngineView View(DateTime now)
     {
         var remaining = Math.Max(0, _s.WarmupSeconds + _s.WindowSeconds - (int)(now - _started).TotalSeconds);
-        var status = _book.Count == 0 ? "等待 Level 2 盘口" : !Healthy(now) ? "盘口过期或价差异常：暂停信号"
+        var status = _book.Count == 0 ? "等待 Level 2 盘口" : !Healthy(now) ? HealthProblem(now)
             : remaining > 0 ? $"建立基线 {remaining}s" : "监测中（新价位单独预热）";
         return new(status, _book.Count(x => x.Value.Volume > 0), remaining,
             _zones.Select(z => new ZoneView(z.Id, z.Side, z.Low, z.High, z.Created, z.CreatedBar, z.State,

@@ -18,6 +18,7 @@ public sealed partial class DepthOfMarketBetaIndicator : DOM
     private readonly RenderFont _zoneFont = new("Microsoft YaHei", 10);
     private ZoneEngine? _engine;
     private bool _ready, _disposed;
+    private DateTime _lastZoneBookCheck;
     private static readonly TimeSpan ZoneTimer = TimeSpan.FromMilliseconds(250);
 
     protected override void OnInitialize()
@@ -70,6 +71,9 @@ public sealed partial class DepthOfMarketBetaIndicator : DOM
     private void ProcessZoneDepths(IEnumerable<MarketDataArg> depths)
     {
         if (!_enableZones || !_ready || _disposed || InstrumentInfo is null || MarketDepthInfo is null || CurrentBar < 1) return;
+        var updates = depths.Where(d => d.IsBid || d.IsAsk).Select(ToRow)
+            .Where(d => d.Price > 0 && d.Volume >= 0).ToArray();
+        if (updates.Length == 0) return;
         lock (_zonesGate)
         {
             var now = DateTime.UtcNow;
@@ -80,8 +84,15 @@ public sealed partial class DepthOfMarketBetaIndicator : DOM
                     .Select(ToRow), now, CurrentBar - 1);
                 return; // The triggering batch is already represented by the snapshot.
             }
-            foreach (var depth in depths)
-                if (depth.IsBid || depth.IsAsk) _engine!.Depth(ToRow(depth), now, CurrentBar - 1);
+            foreach (var row in updates) _engine.Depth(row, now, CurrentBar - 1);
+            // Recover a divergent incremental book from the platform's authoritative snapshot.
+            // Only a real depth callback may trigger this check; redraw/timer ticks cannot renew data.
+            if (_engine.NeedsBookRepair(now) && (now - _lastZoneBookCheck).TotalSeconds >= 1)
+            {
+                _lastZoneBookCheck = now;
+                _engine.TryRepairBook(MarketDepthInfo.GetMarketDepthSnapshot()
+                    .Where(d => d.IsBid || d.IsAsk).Select(ToRow), now, CurrentBar - 1);
+            }
             DispatchNotices();
         }
     }
@@ -153,12 +164,7 @@ public sealed partial class DepthOfMarketBetaIndicator : DOM
         EngineView? view;
         DateTime now;
         lock (_zonesGate) { now = DateTime.UtcNow; view = _enableZones ? _engine?.View(now) : null; }
-        var r = Container.Region;
-        var reserved = (_independentColumns
-            ? DepthColumnLayout.Arrange(r.Left, r.Right, Width, Math.Clamp(DepthColumnGap, 0, 100), ColumnSpecs())
-                .Select(p => new Rectangle(p.Left, r.Top, p.Width, r.Height)) : Enumerable.Empty<Rectangle>())
-            .ToArray();
-        if (view is not null) DrawZoneBands(context, view, now, reserved);
+        if (view is not null) DrawZoneBands(context, view, now);
         DrawDepthColumns(context);
     }
 }
