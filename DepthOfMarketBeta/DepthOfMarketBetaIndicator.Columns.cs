@@ -6,6 +6,11 @@ using ATAS.Indicators.Technical;
 using DepthOfMarketBeta.Core;
 using OFT.Rendering.Context;
 using OFT.Rendering.Tools;
+#if LEGACY_DOM_FILTER
+using DomDepthFilter = ATAS.Indicators.Filter;
+#else
+using DomDepthFilter = ATAS.Indicators.VolumeFilter;
+#endif
 
 namespace DepthOfMarketBeta;
 
@@ -45,7 +50,7 @@ public sealed partial class DepthOfMarketBetaIndicator
     [Browsable(false), Display(AutoGenerateField = false)]
     public new DepthChangesMode DepthChangesDisplayMode { get => base.DepthChangesDisplayMode; set => base.DepthChangesDisplayMode = value; }
     [Browsable(false), Display(AutoGenerateField = false)]
-    public new ATAS.Indicators.Filter DepthChangesFilter { get => base.DepthChangesFilter; set => base.DepthChangesFilter = value; }
+    public new DomDepthFilter DepthChangesFilter { get => base.DepthChangesFilter; set => base.DepthChangesFilter = value; }
     [Browsable(false), Display(AutoGenerateField = false)]
     public new Color PullingColor { get => base.PullingColor; set => base.PullingColor = value; }
     [Browsable(false), Display(AutoGenerateField = false)]

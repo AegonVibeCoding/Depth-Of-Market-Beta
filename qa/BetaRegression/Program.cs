@@ -19,6 +19,15 @@ var type = assembly.GetType("DepthOfMarketBeta.DepthOfMarketBetaIndicator", true
 Check(assembly.GetName().Name == "DepthOfMarketBeta", "Distinct assembly identity missing");
 Check(type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName == "depth of market beta", "Wrong indicator name");
 Check(type.BaseType?.Name == "DOM", "Native DOM inheritance missing");
+// The DLL can load even when a hidden DOM property still calls an obsolete SDK getter.
+var filterProperty = type.GetProperty("DepthChangesFilter", BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)!;
+var nativeFilterProperty = type.BaseType!.GetProperty("DepthChangesFilter")!;
+Check(filterProperty.PropertyType == nativeFilterProperty.PropertyType, "DOM filter SDK signature mismatch");
+var instance = Activator.CreateInstance(type)!;
+var filter = filterProperty.GetValue(instance);
+Check(filter is not null, "DOM filter getter failed");
+filterProperty.SetValue(instance, filter);
+Console.WriteLine("PASS native DOM filter type, constructor, settings getter and setter");
 Check(!assembly.GetTypes().Any(t => new[] { "Licens", "Flash", "Overview", "Churn", "BookEventHighlight" }
     .Any(word => t.FullName!.Contains(word, StringComparison.OrdinalIgnoreCase))), "Removed module compiled into beta");
 Check(!assembly.GetReferencedAssemblies().Any(a => a.Name is "System.Net.Http" or "LiquidityZones"), "Old indicator or HTTP client dependency remains");

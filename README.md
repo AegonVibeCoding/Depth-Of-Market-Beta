@@ -1,6 +1,8 @@
-# depth of market beta 1.1
+# depth of market beta 1.1.2
 
-指标名称：**depth of market beta**。DLL：**DepthOfMarketBeta.dll**。版本：**1.1**，程序集版本：**1.1.0.0**。
+指标名称：**depth of market beta**。DLL：**DepthOfMarketBeta.dll**。版本：**1.1.2**，程序集版本：**1.1.2.0**。
+
+1.1.2 修复 ATAS beta 8.0.16 的设置序列化兼容性：原生 DOM 的 `DepthChangesFilter` 已由 `Filter` 改为 `VolumeFilter`，隐藏的同名属性也必须匹配，否则 DLL 虽可加载，读取/保存设置时仍会抛出 MissingMethodException。ATAS 包针对本机 8.0.16.275；ATASX 包针对本机 8.0.15.640，仍使用旧接口。两包不能混用。手动编译旧 SDK 时传入 `-p:LegacyDomFilter=true`。
 
 Z1盘口状态分别显示缺少买卖盘、报价交叉、实际价差超限或数据未更新，并列出买一卖一、价差门槛和更新时间。真实盘口更新后，内部报价异常时会限频核对平台快照；仅使用完整且价差合格的快照重建基线，不把快照计成增挂。数据超时和实际宽价差仍暂停生成。
 
@@ -8,7 +10,7 @@ Z1盘口状态分别显示缺少买卖盘、报价交叉、实际价差超限或
 
 ## 下载
 
-- [1.1 完整包](Indicators/Depth-Of-Market-1.1.zip)
+- [1.1.2 完整包](Indicators/Depth-Of-Market-Beta-1.1.2.zip)
 - [完整使用说明](docs/使用说明.md)
 
 ## 安装
@@ -28,4 +30,4 @@ Z1盘口状态分别显示缺少买卖盘、报价交叉、实际价差超限或
 
 ## 编译
 
-需要Windows、.NET 10 SDK和对应平台SDK，执行 `./DepthOfMarketBeta/Build.ps1`。构建不自动安装，不启动或控制ATAS界面。
+需要Windows、.NET 10 SDK和对应平台SDK，在仓库中执行 `./DepthOfMarketBeta/Build.ps1`。构建不自动安装，不启动或控制ATAS界面。

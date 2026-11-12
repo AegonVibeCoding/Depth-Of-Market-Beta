@@ -5,8 +5,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>DepthOfMarketBeta</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.1.2</Version>
     <AtasDir Condition="'$(AtasDir)' == ''">C:\Program Files (x86)\ATAS Platform</AtasDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(LegacyDomFilter)' == 'true'">
+    <DefineConstants>$(DefineConstants);LEGACY_DOM_FILTER</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="ATAS.Indicators.Technical"><HintPath>$(AtasDir)\ATAS.Indicators.Technical.dll</HintPath><Private>false</Private></Reference>
